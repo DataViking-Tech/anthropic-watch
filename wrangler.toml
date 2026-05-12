@@ -13,7 +13,7 @@ crons = ["*/2 * * * *"]
 # The id below is set after `wrangler kv namespace create ANTHROPIC_WATCH_STATE`.
 [[kv_namespaces]]
 binding = "STATE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "7d91507eab034abb953ccaa894feb0b9"
 
 [vars]
 # Kill switch (per Wesley policy: paging features ship with kill switch defaulted OFF).
@@ -28,8 +28,10 @@ ALERTHUB_INGRESS_URL = "https://alerthub-ingress.wesley-1fd.workers.dev/alert"
 PRODUCER_TYPE = "proactive"
 PRODUCER_ID = "anthropic-watch"
 PRODUCER_VERSION = "0.1.0"
-# Wesley's default IM channel for paging alerts (alerthub-fanout routes by target_channel).
-TARGET_CHANNEL = "wesley-dm"
+# Cross-cutting alerts channel — alerthub-fanout posts to `#${target_channel}`
+# and treats "alerts" as the shared system-wide alerts channel (no mayor binding).
+# This matches the convention used by selfmonitor's no-mayor alerts (selfmonitor.ts:478).
+TARGET_CHANNEL = "alerts"
 # Anthropic status endpoint.
 STATUS_URL = "https://status.anthropic.com/api/v2/summary.json"
 
