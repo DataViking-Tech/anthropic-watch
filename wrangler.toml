@@ -15,10 +15,20 @@ crons = ["*/2 * * * *"]
 binding = "STATE"
 id = "7d91507eab034abb953ccaa894feb0b9"
 
+# Service binding to alerthub-ingress — invoke in-process so the worker-to-worker
+# hop bypasses the public *.workers.dev edge and CF's bot-fight rule 1042.
+# Same pattern as alerthub-digest and alerthub-selfmonitor (see those workers'
+# wrangler.toml). The ALERTHUB_INGRESS_URL var stays as a documentation
+# pointer / fallback but the runtime calls env.INGRESS.fetch().
+[[services]]
+binding = "INGRESS"
+service = "alerthub-ingress"
+
 [vars]
-# Kill switch (per Wesley policy: paging features ship with kill switch defaulted OFF).
-# Set to "true" via `wrangler secret put ANTHROPIC_WATCH_ENABLED` after smoke test passes.
-ANTHROPIC_WATCH_ENABLED = "false"
+# Kill switch is bound as a SECRET, not a var, so it can be toggled at runtime
+# via `wrangler secret put ANTHROPIC_WATCH_ENABLED` without a code change /
+# redeploy. If unset, the worker treats it as "false" (off) by default, which
+# satisfies Wesley's "paging features ship with kill switch defaulted OFF" rule.
 # OpenRouter API base + model. Kept as vars so they're rotatable without code change.
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "google/gemini-2.5-flash"

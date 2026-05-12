@@ -16,6 +16,9 @@
 
 export interface Env {
   STATE: KVNamespace;
+  // Service binding — invoke alerthub-ingress in-process (bypasses CF's bot-fight
+  // rule 1042 that fires on worker-to-worker fetch over public *.workers.dev).
+  INGRESS: Fetcher;
 
   // Vars (wrangler.toml [vars])
   ANTHROPIC_WATCH_ENABLED: string;
@@ -358,7 +361,9 @@ async function postAlert(env: Env, alert: AlertEventBody): Promise<{ ok: boolean
   const origin = `${env.PRODUCER_TYPE}:${env.PRODUCER_ID}`;
   const signature = await hmacSha256Hex(env.HMAC_PROACTIVE_ANTHROPIC_WATCH, `${timestamp}\n${raw}`);
 
-  const resp = await fetch(env.ALERTHUB_INGRESS_URL, {
+  // Use service binding instead of public fetch — see Env.INGRESS comment.
+  // The hostname in the URL is irrelevant for service bindings; only the path/method matter.
+  const resp = await env.INGRESS.fetch("https://internal/alert", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -367,7 +372,6 @@ async function postAlert(env: Env, alert: AlertEventBody): Promise<{ ok: boolean
       "X-Gastown-Signature": signature,
     },
     body: raw,
-    signal: AbortSignal.timeout(10_000),
   });
   const respBody = await resp.text();
   return { ok: resp.ok, status: resp.status, body: respBody };
