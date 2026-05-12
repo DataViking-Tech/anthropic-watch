@@ -1,0 +1,38 @@
+name = "anthropic-watch"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+account_id = "1fd69d413d48666f9d91877fef930f98"
+
+# Cron Trigger — poll Anthropic status every 2 minutes
+[triggers]
+crons = ["*/2 * * * *"]
+
+# KV namespace for transition state (last-seen incident IDs + overall status).
+# The id below is set after `wrangler kv namespace create ANTHROPIC_WATCH_STATE`.
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+# Kill switch (per Wesley policy: paging features ship with kill switch defaulted OFF).
+# Set to "true" via `wrangler secret put ANTHROPIC_WATCH_ENABLED` after smoke test passes.
+ANTHROPIC_WATCH_ENABLED = "false"
+# OpenRouter API base + model. Kept as vars so they're rotatable without code change.
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL = "google/gemini-2.5-flash"
+# Alerthub Ingress URL — the Workers-shared producer endpoint.
+ALERTHUB_INGRESS_URL = "https://alerthub-ingress.wesley-1fd.workers.dev/alert"
+# Producer identity used in HMAC origin header + body bind check.
+PRODUCER_TYPE = "proactive"
+PRODUCER_ID = "anthropic-watch"
+PRODUCER_VERSION = "0.1.0"
+# Wesley's default IM channel for paging alerts (alerthub-fanout routes by target_channel).
+TARGET_CHANNEL = "wesley-dm"
+# Anthropic status endpoint.
+STATUS_URL = "https://status.anthropic.com/api/v2/summary.json"
+
+# Secrets bound via `wrangler secret put` (one-time, server-side):
+#   OPENROUTER_API_KEY              — OpenRouter API key (gastown/prd Doppler)
+#   HMAC_PROACTIVE_ANTHROPIC_WATCH  — shared with alerthub-ingress for /alert POST signing
